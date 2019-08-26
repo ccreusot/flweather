@@ -29,20 +29,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   bool _searchPending = false;
   Weather _currentWeather = null;
 
   void requestWeatherFor(String location) async {
-    var response = await http.get("https://www.prevision-meteo.ch/services/json/$location");
+    var response = await http
+        .get("https://www.prevision-meteo.ch/services/json/$location");
     var bodyResponse = json.decode(response.body);
 
     setState(() {
       _searchPending = false;
-      _currentWeather = Weather(bodyResponse['city_info']['name'],
-        bodyResponse['current_condition']['tmp'],
-        bodyResponse['current_condition']['icon']
-      );
+      _currentWeather = Weather(
+          bodyResponse['city_info']['name'],
+          bodyResponse['current_condition']['tmp'],
+          bodyResponse['current_condition']['hour'],
+          bodyResponse['current_condition']['icon_big']);
     });
   }
 
@@ -74,13 +75,52 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
                   children: <Widget>[
-                    if (_searchPending) Center(child: CircularProgressIndicator())
-                    else if (_currentWeather != null) Center(child:
-                      Image.network(_currentWeather.icon),)
+                    if (_searchPending)
+                      Center(child: CircularProgressIndicator())
+                    else if (_currentWeather != null)
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                    _currentWeather.hour,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w200,
+                                    )),
+                                Text(
+                                  _currentWeather.name,
+                                  style: TextStyle(
+                                    fontSize: 32.0,
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                Text(
+                                  "${_currentWeather.currentTemperature}˚",
+                                  textAlign: TextAlign.end,
+                                  style: TextStyle(
+                                    fontSize: 24.0,
+                                    fontWeight: FontWeight.w200,
+                                  ),
+                                ),
+                                Image.network(_currentWeather.icon, width: 42, height: 42)
+                              ],
+                            ),
+                          )
+                        ],
+                      )
                   ],
                 ),
               )
@@ -92,12 +132,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-
 class Weather {
-
   final String name;
   final int currentTemperature;
+  final String hour;
   final String icon;
 
-  Weather(this.name, this.currentTemperature, this.icon);
+  Weather(this.name, this.currentTemperature, this.hour, this.icon);
 }
