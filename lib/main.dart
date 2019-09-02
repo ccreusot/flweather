@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.amber,
+        primarySwatch: Colors.green,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -31,6 +31,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   bool _searchPending = false;
   Weather _currentWeather = null;
+  TextEditingController _editingController = TextEditingController();
 
   void requestWeatherFor(String location) async {
     var response = await http
@@ -47,12 +48,30 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+
+  @override
+  void dispose() {
+    _editingController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () {
+          FocusScope.of(context).unfocus();
+          requestWeatherFor(_editingController.text);
+          setState(() {
+            _searchPending = true;
+          });
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
@@ -63,14 +82,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: <Widget>[
                   Expanded(
                     child: TextField(
+                      controller: _editingController,
                       decoration: InputDecoration(hintText: "Enter your city"),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (value) {
-                        requestWeatherFor(value);
-                        setState(() {
-                          _searchPending = true;
-                        });
-                      },
+                      textInputAction: TextInputAction.done,
                     ),
                   ),
                 ],
@@ -81,46 +95,48 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: <Widget>[
                     if (_searchPending)
                       Center(child: CircularProgressIndicator())
-                    else if (_currentWeather != null)
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                    _currentWeather.hour,
+                    else
+                      if (_currentWeather != null)
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                      _currentWeather.hour,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w200,
+                                      )),
+                                  Text(
+                                    _currentWeather.name,
                                     style: TextStyle(
+                                      fontSize: 32.0,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: <Widget>[
+                                  Text(
+                                    "${_currentWeather.currentTemperature}˚",
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontSize: 24.0,
                                       fontWeight: FontWeight.w200,
-                                    )),
-                                Text(
-                                  _currentWeather.name,
-                                  style: TextStyle(
-                                    fontSize: 32.0,
-                                    fontWeight: FontWeight.w300,
+                                    ),
                                   ),
-                                )
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                Text(
-                                  "${_currentWeather.currentTemperature}˚",
-                                  textAlign: TextAlign.end,
-                                  style: TextStyle(
-                                    fontSize: 24.0,
-                                    fontWeight: FontWeight.w200,
-                                  ),
-                                ),
-                                Image.network(_currentWeather.icon, width: 42, height: 42)
-                              ],
-                            ),
-                          )
-                        ],
-                      )
+                                  Image.network(_currentWeather.icon, width: 42,
+                                      height: 42)
+                                ],
+                              ),
+                            )
+                          ],
+                        )
                   ],
                 ),
               )
