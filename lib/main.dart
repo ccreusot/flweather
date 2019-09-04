@@ -30,7 +30,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _searchPending = false;
-  Weather _currentWeather = null;
+  List<String> _cities = List();
+  List<Weather> _weathers = List();
   TextEditingController _editingController = TextEditingController();
 
   void requestWeatherFor(String location) async {
@@ -38,16 +39,22 @@ class _MyHomePageState extends State<MyHomePage> {
         .get("https://www.prevision-meteo.ch/services/json/$location");
     var bodyResponse = json.decode(response.body);
 
-    setState(() {
-      _searchPending = false;
-      _currentWeather = Weather(
-          bodyResponse['city_info']['name'],
-          bodyResponse['current_condition']['tmp'],
-          bodyResponse['current_condition']['hour'],
-          bodyResponse['current_condition']['icon_big']);
-    });
+    if (bodyResponse["errors"] == null) {
+      setState(() {
+        _searchPending = false;
+        _cities.add(location);
+        _weathers.add(Weather(
+            bodyResponse['city_info']['name'],
+            bodyResponse['current_condition']['tmp'],
+            bodyResponse['current_condition']['hour'],
+            bodyResponse['current_condition']['icon_big']));
+      });
+    } else {
+      setState(() {
+        _searchPending = false;
+      });
+    }
   }
-
 
   @override
   void dispose() {
@@ -89,57 +96,64 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: <Widget>[
-                    if (_searchPending)
-                      Center(child: CircularProgressIndicator())
-                    else
-                      if (_currentWeather != null)
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                      _currentWeather.hour,
+              if (_searchPending)
+                Expanded(child: Center(child: CircularProgressIndicator()))
+              else if (_weathers.isNotEmpty)
+                Expanded(
+                  child: ListView.builder(
+                      itemBuilder: (BuildContext context, int index) {
+                    if (index >= _weathers.length) {
+                      return null;
+                    }
+                    var currentWeather = _weathers[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(currentWeather.hour,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w200,
+                                        )),
+                                    Text(
+                                      currentWeather.name,
                                       style: TextStyle(
+                                        fontSize: 32.0,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Text(
+                                      "${currentWeather.currentTemperature}˚",
+                                      textAlign: TextAlign.end,
+                                      style: TextStyle(
+                                        fontSize: 24.0,
                                         fontWeight: FontWeight.w200,
-                                      )),
-                                  Text(
-                                    _currentWeather.name,
-                                    style: TextStyle(
-                                      fontSize: 32.0,
-                                      fontWeight: FontWeight.w300,
+                                      ),
                                     ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  Text(
-                                    "${_currentWeather.currentTemperature}˚",
-                                    textAlign: TextAlign.end,
-                                    style: TextStyle(
-                                      fontSize: 24.0,
-                                      fontWeight: FontWeight.w200,
-                                    ),
-                                  ),
-                                  Image.network(_currentWeather.icon, width: 42,
-                                      height: 42)
-                                ],
-                              ),
-                            )
-                          ],
-                        )
-                  ],
-                ),
-              )
+                                    Image.network(currentWeather.icon,
+                                        width: 42, height: 42)
+                                  ],
+                                ),
+                              )
+                            ],
+                          )
+                        ],
+                      ),
+                    );
+                  }),
+                )
             ],
           ),
         ),
