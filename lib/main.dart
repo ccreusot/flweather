@@ -41,13 +41,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (bodyResponse["errors"] == null) {
       setState(() {
-        _searchPending = false;
-        _cities.add(location);
-        _weathers.add(Weather(
+        final weatherToAdd = Weather(
             bodyResponse['city_info']['name'],
             bodyResponse['current_condition']['tmp'],
             bodyResponse['current_condition']['hour'],
-            bodyResponse['current_condition']['icon_big']));
+            bodyResponse['current_condition']['icon_big']);
+        _searchPending = false;
+        _cities.add(location);
+        _weathers.firstWhere((weather) {
+          return weather.name.compareTo(weatherToAdd.name) == 0;
+        }, orElse: () {
+          _weathers.add(weatherToAdd);
+          return null;
+        });
       });
     } else {
       setState(() {
@@ -106,57 +112,67 @@ class _MyHomePageState extends State<MyHomePage> {
                       return null;
                     }
                     var currentWeather = _weathers[index];
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(currentWeather.hour,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w200,
-                                        )),
-                                    Text(
-                                      currentWeather.name,
-                                      style: TextStyle(
-                                        fontSize: 32.0,
-                                        fontWeight: FontWeight.w300,
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: <Widget>[
-                                    Text(
-                                      "${currentWeather.currentTemperature}˚",
-                                      textAlign: TextAlign.end,
-                                      style: TextStyle(
-                                        fontSize: 24.0,
-                                        fontWeight: FontWeight.w200,
-                                      ),
-                                    ),
-                                    Image.network(currentWeather.icon,
-                                        width: 42, height: 42)
-                                  ],
-                                ),
-                              )
-                            ],
-                          )
-                        ],
-                      ),
-                    );
+                    return WeatherItemWidget(weather: currentWeather);
                   }),
                 )
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class WeatherItemWidget extends StatelessWidget {
+  Weather _weather;
+
+  WeatherItemWidget({weather}) : _weather = weather;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(_weather.hour,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w200,
+                        )),
+                    Text(
+                      _weather.name,
+                      style: TextStyle(
+                        fontSize: 32.0,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      "${_weather.currentTemperature}˚",
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.w200,
+                      ),
+                    ),
+                    Image.network(_weather.icon, width: 42, height: 42)
+                  ],
+                ),
+              )
+            ],
+          )
+        ],
       ),
     );
   }
